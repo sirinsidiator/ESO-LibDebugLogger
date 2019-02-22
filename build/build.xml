@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<project name="LibDebugLogger" default="copyToAddonFolder" basedir=".">
+	<property name="version" value="1" />
+	<propertyfile file="build.properties">
+		<entry key="major" type="int" default="1" />
+		<entry key="minor" type="int" default="0" />
+		<entry key="patch" type="int" default="0" />
+		<entry key="build" type="int" default="0" operation="+" />
+		<entry key="api" value="$${eso.api}" />
+	</propertyfile>
+
+	<property name="addonhome" location="${user.home}/Documents/Elder Scrolls Online/live/AddOns" />
+	<property name="addondir" location="${addonhome}/${ant.project.name}" />
+	<property name="srcdir" location="${basedir}/../src" />
+	<property name="tempdir" location="${basedir}/../temp" />
+	<property name="targetdir" location="${basedir}/../target" />
+	<loadproperties srcfile="build.properties" />
+
+	<target name="getIsCustomVersion">
+		<input addproperty="buildcustom" validargs="y,n" defaultvalue="y" message="Do you want to build ${ant.project.name} version ${major}.${minor}.${patch}?" />
+		<condition property="isCustomVersion">
+			<equals arg1="n" arg2="${buildcustom}" />
+		</condition>
+	</target>
+
+	<target name="getCustomVersion" if="isCustomVersion">
+		<input addproperty="customVersion" defaultvalue="${major}.${minor}.${patch}" message="Please enter a custom version number:" />
+		<script language="javascript">
+			<![CDATA[
+				var custom = project.getProperty("customVersion");
+				var parts = custom.split(".");
+				project.setProperty("major", parts[0]);
+				project.setProperty("minor", parts[1]);
+				project.setProperty("patch", parts[2]);
+				]]>
+		</script>
+		<propertyfile file="build.properties">
+			<entry key="major" type="int" value="${major}" />
+			<entry key="minor" type="int" value="${minor}" />
+			<entry key="patch" type="int" value="${patch}" />
+		</propertyfile>
+	</target>
+
+	<target name="getVersion" unless="isCustomVersion">
+		<buildnumber file="build.number" />
+		<property name="finalVersion" value="${build.number}" />
+		<property name="fileVersion" value="${build.number}" />
+	</target>
+
+	<target name="copyToAddonFolder">
+		<delete dir="${addondir}" />
+		<copy todir="${addondir}">
+			<fileset dir="${srcdir}" />
+		</copy>
+		<replace file="${addondir}/${ant.project.name}.txt" token="@VERSION_NUMBER@" value="${major}.${minor}.${patch}-dev" />
+		<replace file="${addondir}/${ant.project.name}.txt" token="@API_VERSION@" value="${api}" />
+		<replace file="${addondir}/${ant.project.name}.txt" token="@BUILD_NUMBER@" value="${build}" />
+	</target>
+
+	<target name="createArchive" depends="getIsCustomVersion,getCustomVersion,getVersion">
+		<delete includeemptydirs="true" dir="${tempdir}" />
+
+		<copy todir="${tempdir}/${ant.project.name}">
+			<fileset dir="${srcdir}" />
+		</copy>
+
+		<replace file="${tempdir}/${ant.project.name}/${ant.project.name}.txt" token="@VERSION_NUMBER@" value="${major}.${minor}.${patch}" />
+		<replace file="${tempdir}/${ant.project.name}/${ant.project.name}.txt" token="@API_VERSION@" value="${eso.api}" />
+		<replace file="${tempdir}/${ant.project.name}/${ant.project.name}.txt" token="@BUILD_NUMBER@" value="${build}" />
+
+		<zip destfile="${targetdir}/${ant.project.name}_${major}_${minor}_${patch}.zip">
+			<fileset dir="${tempdir}" />
+		</zip>
+		<delete includeemptydirs="true" dir="${tempdir}" />
+
+		<propertyfile file="build.properties">
+			<entry key="patch" type="int" value="1" operation="+" />
+		</propertyfile>
+	</target>
+</project>
