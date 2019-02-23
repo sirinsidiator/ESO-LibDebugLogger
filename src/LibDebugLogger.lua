@@ -31,7 +31,7 @@ local LOG_LEVEL_TO_STRING = {
 local STR_TO_LOG_LEVEL = {}
 for level, str in pairs(LOG_LEVEL_TO_STRING) do
     STR_TO_LOG_LEVEL[str] = level
-    STR_TO_LOG_LEVEL[level] = string.lower(level)
+    STR_TO_LOG_LEVEL[string.lower(level)] = level
 end
 
 -- variables
@@ -63,9 +63,26 @@ local function FormatTime(timestamp)
     return os.date("%F %T.%%03.0f %z", timestamp / 1000):format(timestamp % 1000)
 end
 
+local MAX_SAVE_DATA_LENGTH = 1999 -- buffer length used by ZOS
+local function SplitLongStringIfNeeded(value)
+    local output = value
+    local byteLength = #value
+    if(byteLength > MAX_SAVE_DATA_LENGTH) then
+        output = {}
+        local startPos = 1
+        local endPos = startPos + MAX_SAVE_DATA_LENGTH - 1
+        while startPos <= byteLength do
+            output[#output + 1] = value:sub(startPos, endPos)
+            startPos = endPos + 1
+            endPos = startPos + MAX_SAVE_DATA_LENGTH - 1
+        end
+    end
+    return output
+end
+
 -- before the addon is fully loaded we just store all logs in a plain list
 local function Log(level, tag, ...)
-    if(LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
+    if(not LOG_LEVEL_TO_NUMBER[level] or not LOG_LEVEL_TO_NUMBER[settings.minLogLevel] or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
 
     local message = ""
     local count = select("#", ...)
@@ -93,11 +110,11 @@ local function Log(level, tag, ...)
         FormatTime(now),
         level,
         tag,
-        message
+        SplitLongStringIfNeeded(message)
     }
 
     if(settings.logTraces) then
-        entry[#entry + 1] = debug.traceback()
+        entry[#entry + 1] = SplitLongStringIfNeeded(debug.traceback())
     end
 
     log[#log + 1] = entry
