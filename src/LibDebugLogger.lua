@@ -1,6 +1,9 @@
 local LIB_IDENTIFIER = "LibDebugLogger"
 
-assert(not LibDebugLogger, LIB_IDENTIFIER .. " is already loaded")
+assert(not _G[LIB_IDENTIFIER], LIB_IDENTIFIER .. " is already loaded")
+
+local lib = {}
+_G[LIB_IDENTIFIER] = lib
 
 -- constants
 local LOG_LEVEL_DEBUG = "D"
@@ -35,7 +38,6 @@ for level, str in pairs(LOG_LEVEL_TO_STRING) do
 end
 
 -- variables
-LibDebugLogger = {}
 local startTime = GetTimeStamp() * 1000 - GetGameTimeMilliseconds()
 local log = {}
 local temp = {}
@@ -130,12 +132,12 @@ function Logger:New(tag)
 end
 
 -- public api
-LibDebugLogger.LOG_LEVEL_DEBUG = LOG_LEVEL_DEBUG
-LibDebugLogger.LOG_LEVEL_INFO = LOG_LEVEL_INFO
-LibDebugLogger.LOG_LEVEL_WARNING = LOG_LEVEL_WARNING
-LibDebugLogger.LOG_LEVEL_ERROR = LOG_LEVEL_ERROR
-LibDebugLogger.LOG_LEVEL_TO_STRING = LOG_LEVEL_TO_STRING
-LibDebugLogger.STR_TO_LOG_LEVEL = STR_TO_LOG_LEVEL
+lib.LOG_LEVEL_DEBUG = LOG_LEVEL_DEBUG
+lib.LOG_LEVEL_INFO = LOG_LEVEL_INFO
+lib.LOG_LEVEL_WARNING = LOG_LEVEL_WARNING
+lib.LOG_LEVEL_ERROR = LOG_LEVEL_ERROR
+lib.LOG_LEVEL_TO_STRING = LOG_LEVEL_TO_STRING
+lib.STR_TO_LOG_LEVEL = STR_TO_LOG_LEVEL
 
 --- Convenience method to create a new instance of the logger with a combined tag. Can be used to separate logs from different files.
 --- @param tag - a string identifier that is appended to the tag of the parent, separated by a slash
@@ -180,9 +182,11 @@ end
 
 --- @param tag - a string identifier that is used to identify entries made via this logger
 --- @return a new logger instance with the passed tag
-LibDebugLogger.Create = function(tag)
+lib.Create = function(tag)
     return Logger:New(tag)
 end
+
+setmetatable(lib, { __call = lib.Create })
 
 -- initialization
 Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing... {a:'%s', c:'%s', s:%s}", GetDisplayName(), GetUnitName("player"), FormatTime(startTime))
