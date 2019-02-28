@@ -186,7 +186,7 @@ lib.Create = function(tag)
     return Logger:New(tag)
 end
 
-setmetatable(lib, { __call = lib.Create })
+setmetatable(lib, { __call = function(_, tag) return lib.Create(tag) end })
 
 -- initialization
 Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing... {a:'%s', c:'%s', s:%s}", GetDisplayName(), GetUnitName("player"), FormatTime(startTime))
