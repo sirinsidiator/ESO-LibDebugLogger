@@ -207,7 +207,35 @@ end
 setmetatable(lib, { __call = function(_, tag) return lib.Create(tag) end })
 
 -- initialization
-Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing... {a:'%s', c:'%s', s:%s}", GetDisplayName(), GetUnitName("player"), FormatTime(startTime))
+local AddOnManager = GetAddOnManager()
+local numAddons = AddOnManager:GetNumAddOns()
+local numEnabledAddons = 0
+local addOnInfo = {}
+for i = 1, numAddons do
+    local name, _, _, _, enabled = AddOnManager:GetAddOnInfo(i)
+    local version = AddOnManager:GetAddOnVersion(i)
+    local directory = AddOnManager:GetAddOnRootDirectoryPath(i)
+    if(enabled) then
+        addOnInfo[name] = string.format("Addon loaded: %s, AddOnVersion: %d, directory: '%s'", name, version, directory)
+        numEnabledAddons = numEnabledAddons + 1
+    end
+end
+
+local debugInfo = {
+    GetDisplayName(),
+    GetUnitName("player"),
+    FormatTime(startTime),
+    GetESOVersionString(),
+    GetWorldName(),
+    GetString("SI_PLATFORMSERVICETYPE", GetPlatformServiceType()),
+    IsConsoleUI() and "gamepad" or "keyboard",
+    IsESOPlusSubscriber() and "eso+" or "regular",
+    GetCVar("language.2"),
+    GetKeyboardLayout(),
+    string.format("addon count: %d/%d", numEnabledAddons, numAddons),
+    AddOnManager:GetLoadOutOfDateAddOns() and "allow outdated" or "block outdated",
+}
+Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing...\n" .. table.concat(debugInfo, "\n"))
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCode, errorString)
     if(errorString) then
@@ -216,7 +244,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCo
 end)
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(event, name)
-    Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Addon loaded:", name)
+    Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or string.format("UI module loaded: %s", name))
 
     if(name == LIB_IDENTIFIER) then
         SLASH_COMMANDS["/debuglogger"] = function(params)
