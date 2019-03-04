@@ -39,6 +39,7 @@ end
 
 -- variables
 local startTime = GetTimeStamp() * 1000 - GetGameTimeMilliseconds()
+-- before the library is fully loaded we just store all logs in a temporary table
 local log = {}
 local temp = {}
 
@@ -82,10 +83,7 @@ local function SplitLongStringIfNeeded(value)
     return output
 end
 
--- before the addon is fully loaded we just store all logs in a plain list
-local function Log(level, tag, ...)
-    if(not LOG_LEVEL_TO_NUMBER[level] or not LOG_LEVEL_TO_NUMBER[settings.minLogLevel] or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
-
+local function DoLog(level, tag, ...)
     local message = ""
     local count = select("#", ...)
     if(count > 0) then
@@ -120,6 +118,26 @@ local function Log(level, tag, ...)
     end
 
     log[#log + 1] = entry
+end
+
+local function Log(level, tag, ...)
+    if(not LOG_LEVEL_TO_NUMBER[level] or not LOG_LEVEL_TO_NUMBER[settings.minLogLevel] or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
+    local handled, err = pcall(DoLog, level, tag, ...)
+    if(not handled) then -- add a simple log that should hopefully never fail
+        local message
+        if(type(err) == "string") then
+            message = string.sub(err, 1, MAX_SAVE_DATA_LENGTH)
+        else
+            message = "Could not create log entry"
+        end
+        log[#log + 1] = {
+            startTime + GetGameTimeMilliseconds(),
+            "-",
+            LOG_LEVEL_ERROR,
+            LIB_IDENTIFIER,
+            message
+        }
+    end
 end
 
 local Logger = ZO_Object:Subclass()
