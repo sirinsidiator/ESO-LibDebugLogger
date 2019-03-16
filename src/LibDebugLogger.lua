@@ -11,9 +11,9 @@ local LOG_LEVEL_INFO = "I"
 local LOG_LEVEL_WARNING = "W"
 local LOG_LEVEL_ERROR = "E"
 
--- these are not hard limits and we will only clean up once on UI load
 local NUM_MAX_ENTRIES = 10000
 local MAX_ENTRY_AGE = 24 * 3600 * 1000 -- one day
+local MAX_SAVE_DATA_LENGTH = 1999 -- buffer length used by ZOS
 
 -- these are used during UI load before the saved settings become available
 local STARTUP_LOG_TRACES = true
@@ -37,6 +37,17 @@ for level, str in pairs(LOG_LEVEL_TO_STRING) do
     STR_TO_LOG_LEVEL[string.lower(level)] = level
 end
 
+local strformat = string.format
+local tostring = tostring
+local tconcat = table.concat
+local osdate = os.date
+local traceback = debug.traceback
+local select = select
+local type = type
+local pcall = pcall
+local ZO_ClearTable = ZO_ClearTable
+local GetGameTimeMilliseconds = GetGameTimeMilliseconds
+
 -- variables
 local startTime = GetTimeStamp() * 1000 - GetGameTimeMilliseconds()
 -- before the library is fully loaded we just store all logs in a temporary table
@@ -55,6 +66,9 @@ settings.logTraces = STARTUP_LOG_TRACES
 settings.minLogLevel = STARTUP_LOG_LEVEL
 
 -- private functions
+
+-- this function should probably be smarter about detecting real formatting strings.
+-- right now we just do a simple detection, try if it works and fall back to using tostring otherwise
 local function IsFormattingString(input)
     if(type(input) == "string" and input:find("%%%S")) then
         return true
@@ -63,10 +77,9 @@ local function IsFormattingString(input)
 end
 
 local function FormatTime(timestamp)
-    return os.date("%F %T.%%03.0f %z", timestamp / 1000):format(timestamp % 1000)
+    return osdate("%F %T.%%03.0f %z", timestamp / 1000):format(timestamp % 1000)
 end
 
-local MAX_SAVE_DATA_LENGTH = 1999 -- buffer length used by ZOS
 local function SplitLongStringIfNeeded(value)
     local output = value
     local byteLength = #value
@@ -90,9 +103,7 @@ local function DoLog(level, tag, ...)
         local handled = false
         if(IsFormattingString(select(1, ...))) then
             -- use pcall to try formatting the string, otherwise we may end up with an infinite error loop
-            handled = pcall(function(...)
-                message = string.format(...)
-            end, ...)
+            handled, message = pcall(strformat, ...)
         end
 
         if(not handled) then
@@ -100,7 +111,7 @@ local function DoLog(level, tag, ...)
             for i = 1, select("#", ...) do
                 temp[i] = tostring(select(i, ...))
             end
-            message = table.concat(temp, " ")
+            message = tconcat(temp, " ")
         end
     end
 
@@ -114,7 +125,7 @@ local function DoLog(level, tag, ...)
     }
 
     if(settings.logTraces) then
-        entry[#entry + 1] = SplitLongStringIfNeeded(debug.traceback())
+        entry[#entry + 1] = SplitLongStringIfNeeded(traceback())
     end
 
     log[#log + 1] = entry
@@ -161,7 +172,7 @@ lib.STR_TO_LOG_LEVEL = STR_TO_LOG_LEVEL
 --- @param tag - a string identifier that is appended to the tag of the parent, separated by a slash
 --- @return a new logger instance with the combined tag
 function Logger:Create(tag)
-    return Logger:New(string.format("%s/%s", self.tag, tag))
+    return Logger:New(strformat("%s/%s", self.tag, tag))
 end
 
 --- setter to turn this logger of so it no longer adds anything to the log when one of its log methods is called.
@@ -216,7 +227,7 @@ for i = 1, numAddons do
     local version = AddOnManager:GetAddOnVersion(i)
     local directory = AddOnManager:GetAddOnRootDirectoryPath(i)
     if(enabled) then
-        addOnInfo[name] = string.format("Addon loaded: %s, AddOnVersion: %d, directory: '%s'", name, version, directory)
+        addOnInfo[name] = strformat("Addon loaded: %s, AddOnVersion: %d, directory: '%s'", name, version, directory)
         numEnabledAddons = numEnabledAddons + 1
     end
 end
@@ -232,10 +243,10 @@ local debugInfo = {
     IsESOPlusSubscriber() and "eso+" or "regular",
     GetCVar("language.2"),
     GetKeyboardLayout(),
-    string.format("addon count: %d/%d", numEnabledAddons, numAddons),
+    strformat("addon count: %d/%d", numEnabledAddons, numAddons),
     AddOnManager:GetLoadOutOfDateAddOns() and "allow outdated" or "block outdated",
 }
-Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing...\n" .. table.concat(debugInfo, "\n"))
+Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing...\n" .. tconcat(debugInfo, "\n"))
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCode, errorString)
     if(errorString) then
@@ -244,7 +255,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCo
 end)
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(event, name)
-    Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or string.format("UI module loaded: %s", name))
+    Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
 
     if(name == LIB_IDENTIFIER) then
         SLASH_COMMANDS["/debuglogger"] = function(params)
@@ -280,7 +291,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
                 out[#out + 1] = "- <clear>     Deletes all log entries"
                 out[#out + 1] = "-"
                 out[#out + 1] = "- Example: /debuglogger stack on"
-                d(table.concat(out, "\n"))
+                d(tconcat(out, "\n"))
             end
         end
 
