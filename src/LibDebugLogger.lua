@@ -16,6 +16,14 @@ local LOG_PRUNE_THRESHOLD = NUM_MAX_ENTRIES + 1000
 local MAX_ENTRY_AGE = 24 * 3600 * 1000 -- one day
 local MAX_SAVE_DATA_LENGTH = 1999 -- buffer length used by ZOS
 
+local ENTRY_TIME_INDEX = 1
+local ENTRY_FORMATTED_TIME_INDEX = 2
+local ENTRY_OCCURENCES_INDEX = 3
+local ENTRY_LEVEL_INDEX = 4
+local ENTRY_TAG_INDEX = 5
+local ENTRY_MESSAGE_INDEX = 6
+local ENTRY_STACK_INDEX = 7
+
 -- these are used during UI load before the saved settings become available
 local STARTUP_LOG_TRACES = true
 local STARTUP_LOG_LEVEL = LOG_LEVEL_DEBUG
@@ -83,7 +91,7 @@ end
 
 local function PruneLog()
     if(#log > LOG_PRUNE_THRESHOLD) then
-         -- table.remove is slow, so instead we just copy the results over to a new table and discard the old one
+        -- table.remove is slow, so instead we just copy the results over to a new table and discard the old one
         local newLog = {}
         local startIndex = #log - NUM_MAX_ENTRIES
         for i = startIndex, #log do
@@ -96,6 +104,8 @@ local function PruneLog()
 end
 
 local function SplitLongStringIfNeeded(value)
+    if(not value) then return nil end
+
     local output = value
     local byteLength = #value
     if(byteLength > MAX_SAVE_DATA_LENGTH) then
@@ -111,6 +121,7 @@ local function SplitLongStringIfNeeded(value)
     return output
 end
 
+local lastEntry, lastMessage, lastStacktrace
 local function DoLog(level, tag, ...)
     local message = ""
     local count = select("#", ...)
@@ -130,20 +141,31 @@ local function DoLog(level, tag, ...)
         end
     end
 
-    local now = startTime + GetGameTimeMilliseconds()
-    local entry = {
-        now,
-        FormatTime(now),
-        level,
-        tag,
-        SplitLongStringIfNeeded(message)
-    }
-
+    local stacktrace
     if(settings.logTraces) then
-        entry[#entry + 1] = SplitLongStringIfNeeded(traceback())
+        stacktrace = traceback()
     end
 
-    log[#log + 1] = entry
+    if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[ENTRY_LEVEL_INDEX] ~= level or lastEntry[ENTRY_TAG_INDEX] ~= tag) then
+        local now = startTime + GetGameTimeMilliseconds()
+        local entry = {
+            now, -- ENTRY_TIME_INDEX
+            FormatTime(now), -- ENTRY_FORMATTED_TIME_INDEX
+            1, -- ENTRY_OCCURENCES_INDEX
+            level, -- ENTRY_LEVEL_INDEX
+            tag, -- ENTRY_TAG_INDEX
+            SplitLongStringIfNeeded(message), -- ENTRY_MESSAGE_INDEX
+            SplitLongStringIfNeeded(stacktrace) -- ENTRY_STACK_INDEX
+        }
+
+        log[#log + 1] = entry
+
+        lastEntry = entry
+        lastMessage = message
+        lastStacktrace = stacktrace
+    else
+        lastEntry[ENTRY_OCCURENCES_INDEX] = lastEntry[ENTRY_OCCURENCES_INDEX] + 1
+    end
 
     -- need to trim the log during the session in case some addon is producing an error every frame for the whole session without the user noticing, until they cannot log in next time
     PruneLog()
@@ -162,6 +184,7 @@ local function Log(level, tag, ...)
         log[#log + 1] = {
             startTime + GetGameTimeMilliseconds(),
             "-",
+            1,
             LOG_LEVEL_ERROR,
             LIB_IDENTIFIER,
             message
@@ -185,6 +208,14 @@ lib.LOG_LEVEL_WARNING = LOG_LEVEL_WARNING
 lib.LOG_LEVEL_ERROR = LOG_LEVEL_ERROR
 lib.LOG_LEVEL_TO_STRING = LOG_LEVEL_TO_STRING
 lib.STR_TO_LOG_LEVEL = STR_TO_LOG_LEVEL
+
+lib.ENTRY_TIME_INDEX = ENTRY_TIME_INDEX
+lib.ENTRY_FORMATTED_TIME_INDEX = ENTRY_FORMATTED_TIME_INDEX
+lib.ENTRY_OCCURENCES_INDEX = ENTRY_OCCURENCES_INDEX
+lib.ENTRY_LEVEL_INDEX = ENTRY_LEVEL_INDEX
+lib.ENTRY_TAG_INDEX = ENTRY_TAG_INDEX
+lib.ENTRY_MESSAGE_INDEX = ENTRY_MESSAGE_INDEX
+lib.ENTRY_STACK_INDEX = ENTRY_STACK_INDEX
 
 --- Convenience method to create a new instance of the logger with a combined tag. Can be used to separate logs from different files.
 --- @param tag - a string identifier that is appended to the tag of the parent, separated by a slash
@@ -323,7 +354,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
             local minTime = startTime - MAX_ENTRY_AGE
             for i = startIndex, #oldLog do
                 local entry = oldLog[i]
-                if(entry[1] >= minTime) then
+                if(entry[ENTRY_TIME_INDEX] >= minTime) then
                     log[#log + 1] = entry
                 end
             end
