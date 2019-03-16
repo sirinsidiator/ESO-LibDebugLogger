@@ -12,6 +12,7 @@ local LOG_LEVEL_WARNING = "W"
 local LOG_LEVEL_ERROR = "E"
 
 local NUM_MAX_ENTRIES = 10000
+local LOG_PRUNE_THRESHOLD = NUM_MAX_ENTRIES + 1000
 local MAX_ENTRY_AGE = 24 * 3600 * 1000 -- one day
 local MAX_SAVE_DATA_LENGTH = 1999 -- buffer length used by ZOS
 
@@ -80,6 +81,20 @@ local function FormatTime(timestamp)
     return osdate("%F %T.%%03.0f %z", timestamp / 1000):format(timestamp % 1000)
 end
 
+local function PruneLog()
+    if(#log > LOG_PRUNE_THRESHOLD) then
+         -- table.remove is slow, so instead we just copy the results over to a new table and discard the old one
+        local newLog = {}
+        local startIndex = #log - NUM_MAX_ENTRIES
+        for i = startIndex, #log do
+            newLog[#newLog + 1] = log[i]
+        end
+
+        log = newLog
+        LibDebugLoggerLog = newLog
+    end
+end
+
 local function SplitLongStringIfNeeded(value)
     local output = value
     local byteLength = #value
@@ -129,6 +144,9 @@ local function DoLog(level, tag, ...)
     end
 
     log[#log + 1] = entry
+
+    -- need to trim the log during the session in case some addon is producing an error every frame for the whole session without the user noticing, until they cannot log in next time
+    PruneLog()
 end
 
 local function Log(level, tag, ...)
