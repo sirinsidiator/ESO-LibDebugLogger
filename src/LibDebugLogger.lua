@@ -429,6 +429,22 @@ end
 
 ZO_PreHook(SharedChatSystem, "AddMessage", LogChatMessage)
 
+local function LogAlertMessage(category, soundId, message, ...)
+    if(category ~= UI_ALERT_CATEGORY_ERROR or not message) then return end
+    message = zo_strformat(message, ...)
+    if(message == "") then return end
+
+    local stacktrace
+    if(settings.logTraces) then
+        stacktrace = traceback()
+    end
+
+    LogInternal(LOG_LEVEL_WARNING, TAG_INGAME, message, stacktrace)
+end
+
+ZO_PreHook("ZO_Alert", LogAlertMessage)
+ZO_PreHook("ZO_AlertNoSuppression", LogAlertMessage)
+
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(event, name)
     Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
 
