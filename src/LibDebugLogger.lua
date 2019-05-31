@@ -311,6 +311,12 @@ function lib:GetLog()
     return LibDebugLoggerLog
 end
 
+--- removes all entries from the log.
+function lib:ClearLog()
+    log = {}
+    LibDebugLoggerLog = log
+end
+
 -- initialization
 local AddOnManager = GetAddOnManager()
 local numAddons = AddOnManager:GetNumAddOns()
@@ -352,26 +358,54 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
     Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
 
     if(name == LIB_IDENTIFIER) then
+        -- we want to avoid having a dependency on LibChatLogger, but still use it in case it is around
+        local chat
+        local function GetChatProxy()
+            if(not chat) then
+                if(LibChatMessage) then
+                    chat = LibChatMessage("LibDebugLogger", "LDL")
+                else
+                    chat = {
+                        Print = function(self, message) df("[%s] %s", LIB_IDENTIFIER, message) end,
+                        Printf = function(self, formatter, ...) return df("[%s] " .. formatter, LIB_IDENTIFIER, ...) end,
+                    }
+                end
+            end
+            return chat
+        end
+
         SLASH_COMMANDS["/debuglogger"] = function(params)
+            local chat = GetChatProxy()
             local handled = false
             local command, arg = zo_strsplit(" ", params)
             command = string.lower(command)
             arg = string.lower(arg)
 
             if(command == "stack") then
-                local logTraces = (arg == "on")
-                df("[%s] %s stack trace logging", LIB_IDENTIFIER, logTraces and "enabled" or "disabled")
-                settings.logTraces = logTraces
+                if(arg == "on") then
+                    lib:SetTraceLoggingEnabled(true)
+                    chat:Print("Enabled stack trace logging")
+                elseif(arg == "off") then
+                    lib:SetTraceLoggingEnabled(false)
+                    chat:Print("Disabled stack trace logging")
+                else
+                    local enabled = lib:IsTraceLoggingEnabled()
+                    chat:Printf("Stack trace logging is currently %s", enabled and "enabled" or "disabled")
+                end
                 handled = true
             elseif(command == "level") then
-                local level = STR_TO_LOG_LEVEL[arg] or defaultSettings.minLogLevel
-                df("[%s] set log level to %s", LIB_IDENTIFIER, LOG_LEVEL_TO_STRING[level])
-                settings.minLogLevel = level
+                local level = STR_TO_LOG_LEVEL[arg]
+                if(level) then
+                    lib:SetMinLogLevel(level)
+                    chat:Printf("Set log level to %s", LOG_LEVEL_TO_STRING[level])
+                else
+                    level = lib:GetMinLogLevel()
+                    chat:Printf("Log level is currently set to %s", LOG_LEVEL_TO_STRING[level])
+                end
                 handled = true
             elseif(command == "clear") then
-                log = {}
-                LibDebugLoggerLog = log
-                df("[%s] log was emptied", LIB_IDENTIFIER)
+                lib:ClearLog()
+                chat:Print("log was emptied")
                 handled = true
             end
 
@@ -379,13 +413,13 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
                 local out = {}
                 out[#out + 1] = "/debuglogger <command> [argument]"
                 out[#out + 1] = "- <stack>     [on/off]"
-                out[#out + 1] = "-     Enables or disables the logging"
+                out[#out + 1] = "-     Enables or disables trace logging"
                 out[#out + 1] = "- <level>     [d(ebug)/i(nfo)/w(arning)/e(rror)]"
                 out[#out + 1] = "-     Sets the minimum level for logging"
                 out[#out + 1] = "- <clear>     Deletes all log entries"
                 out[#out + 1] = "-"
                 out[#out + 1] = "- Example: /debuglogger stack on"
-                d(tconcat(out, "\n"))
+                chat:Print(tconcat(out, "\n"))
             end
         end
 
