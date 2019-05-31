@@ -358,6 +358,16 @@ function lib:ClearLog()
     self.callbackObject:FireCallbacks(lib.CALLBACK_LOG_CLEARED)
 end
 
+--- @param enabled - controls if logs created via d(), df() or CHAT_SYSTEM:AddMessage should be hidden from the chat window
+function lib:SetBlockChatOutputEnabled(enabled)
+    self.blockChatOutput = enabled
+end
+
+--- @return true, if logs created via d(), df() or CHAT_SYSTEM:AddMessage are hidden from the chat window
+function lib:IsBlockChatOutputEnabled()
+    return self.blockChatOutput
+end
+
 --- This method rebuilds the input string in case it has been split up to circumvent the saved variables string length limit.
 --- @return the resulting string
 function lib.CombineSplitStringIfNeeded(input)
@@ -407,10 +417,29 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCo
     end
 end)
 
+local function LogChatMessage(self, text)
+    local stacktrace
+    if(settings.logTraces) then
+        stacktrace = traceback()
+    end
+
+    LogInternal(LOG_LEVEL_INFO, TAG_INGAME, text, stacktrace)
+    return lib.blockChatOutput
+end
+
+ZO_PreHook(SharedChatSystem, "AddMessage", LogChatMessage)
+
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(event, name)
     Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
 
     if(name == LIB_IDENTIFIER) then
+        -- some addons like pChat use less than ideal ways to intercept chat messages. when we detect them,
+        -- we are forced to overwrite AddMessage on the instance object to make sure the d() calls are intercepted correctly
+        if(rawget(CHAT_SYSTEM, "AddMessage") ~= nil) then
+            Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Chat addon compatibility enabled")
+            ZO_PreHook(CHAT_SYSTEM, "AddMessage", LogChatMessage)
+        end
+
         -- we want to avoid having a dependency on LibChatLogger, but still use it in case it is around
         local chat
         local function GetChatProxy()
