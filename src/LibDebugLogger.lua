@@ -321,7 +321,7 @@ end
 
 --- We don't actually know the exact time for the UI load, so instead we just use the time when LibDebugLogger.lua was loaded.
 --- Since all log messages will have a timestamp after that, it's good enough for our purpose.
---- @return the approximate time when the UI was loaded in milliseconds. 
+--- @return the approximate time when the UI was loaded in milliseconds.
 function lib:GetUiLoadStartTime()
     return uiLoadStartTime
 end
@@ -444,6 +444,35 @@ end
 
 ZO_PreHook("ZO_Alert", LogAlertMessage)
 ZO_PreHook("ZO_AlertNoSuppression", LogAlertMessage)
+
+local regularLoadingScreen = false
+EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_ACTIVATED, function(event, initial)
+    -- the "initial" parameter passed to the event is only ever false when the UI was reloaded
+    -- to fix this, we track if the event was the first of its kind and set the flag to false otherwise
+    if(regularLoadingScreen) then
+        initial = false
+    end
+
+    local now = sessionStartTime + GetGameTimeMilliseconds()
+    local isApproximate = false
+    local duration
+    if(settings.loadScreenStartTime and not initial) then
+        duration = now - settings.loadScreenStartTime
+    else
+        duration = now - uiLoadStartTime
+        isApproximate = true
+    end
+    local name = initial and "Initial loading" or "Loading"
+    local prefix = isApproximate and "approximate " or ""
+    Log(LOG_LEVEL_DEBUG, LIB_IDENTIFIER, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
+
+    regularLoadingScreen = true
+end)
+
+EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_PLAYER_DEACTIVATED, function(event)
+    settings.loadScreenStartTime = sessionStartTime + GetGameTimeMilliseconds()
+    Log(LOG_LEVEL_DEBUG, LIB_IDENTIFIER, "Loading screen started")
+end)
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(event, name)
     Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
