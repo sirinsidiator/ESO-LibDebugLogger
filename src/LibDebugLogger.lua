@@ -208,6 +208,7 @@ function Logger:New(tag)
 end
 
 -- public api
+lib.DEFAULT_SETTINGS = defaultSettings
 lib.LOG_LEVEL_DEBUG = LOG_LEVEL_DEBUG
 lib.LOG_LEVEL_INFO = LOG_LEVEL_INFO
 lib.LOG_LEVEL_WARNING = LOG_LEVEL_WARNING
@@ -267,11 +268,35 @@ end
 
 --- @param tag - a string identifier that is used to identify entries made via this logger
 --- @return a new logger instance with the passed tag
-lib.Create = function(tag)
+function lib.Create(tag)
     return Logger:New(tag)
 end
-
 setmetatable(lib, { __call = function(_, tag) return lib.Create(tag) end })
+
+--- @return true, if logs capture a stack trace.
+function lib:IsTraceLoggingEnabled()
+    return settings.logTraces
+end
+
+--- @param enabled - controls if logs should capture a stack trace.
+function lib:SetTraceLoggingEnabled(enabled)
+    settings.logTraces = enabled
+end
+
+--- @return the minimum log level.
+function lib:GetMinLogLevel()
+    return settings.minLogLevel
+end
+
+--- @param level - sets the minimum log level.
+function lib:SetMinLogLevel(level)
+    settings.minLogLevel = level
+end
+
+--- @return returns the log table.
+function lib:GetLog()
+    return LibDebugLoggerLog
+end
 
 -- initialization
 local AddOnManager = GetAddOnManager()
