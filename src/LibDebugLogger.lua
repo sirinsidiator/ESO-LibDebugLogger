@@ -83,6 +83,16 @@ local settings = ZO_ShallowTableCopy(defaultSettings)
 settings.logTraces = STARTUP_LOG_TRACES
 settings.minLogLevel = STARTUP_LOG_LEVEL
 
+lib.callbackObject = ZO_CallbackObject:New()
+lib.CALLBACK_LOG_CLEARED = "LogCleared"
+lib.CALLBACK_LOG_PRUNED = "LogPruned"
+lib.CALLBACK_LOG_ADDED = "LogAdded"
+
+-- callbacks should be as lightweight as possible. If you plan to use expensive calls, defer the execution with zo_callLater!
+function lib:RegisterCallback(...)
+    return self.callbackObject:RegisterCallback(...)
+end
+
 -- private functions
 
 -- this function should probably be smarter about detecting real formatting strings.
@@ -109,6 +119,7 @@ local function PruneLog()
 
         log = newLog
         LibDebugLoggerLog = newLog
+        lib.callbackObject:FireCallbacks(lib.CALLBACK_LOG_PRUNED, startIndex)
     end
 end
 
@@ -154,6 +165,7 @@ end
 
 local lastEntry, lastMessage, lastStacktrace
 local function DoLog(level, tag, message, stacktrace)
+    local wasDuplicate = false
     if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[ENTRY_LEVEL_INDEX] ~= level or lastEntry[ENTRY_TAG_INDEX] ~= tag) then
         local now = startTime + GetGameTimeMilliseconds()
         local entry = {
@@ -173,7 +185,9 @@ local function DoLog(level, tag, message, stacktrace)
         lastStacktrace = stacktrace
     else
         lastEntry[ENTRY_OCCURENCES_INDEX] = lastEntry[ENTRY_OCCURENCES_INDEX] + 1
+        wasDuplicate = true
     end
+    lib.callbackObject:FireCallbacks(lib.CALLBACK_LOG_ADDED, lastEntry, wasDuplicate)
 
     -- need to trim the log during the session in case some addon is producing an error every frame for the whole session without the user noticing, until they cannot log in next time
     PruneLog()
@@ -194,6 +208,7 @@ local function LogFallbackMessage(message)
         LIB_IDENTIFIER,
         message
     }
+    lib.callbackObject:FireCallbacks(lib.CALLBACK_LOG_ADDED, log[#log], false)
 end
 
 local function LogInternal(level, tag, message, stacktrace)
@@ -338,6 +353,7 @@ end
 function lib:ClearLog()
     log = {}
     LibDebugLoggerLog = log
+    self.callbackObject:FireCallbacks(lib.CALLBACK_LOG_CLEARED)
 end
 
 -- initialization
