@@ -64,7 +64,8 @@ local ZO_ClearTable = ZO_ClearTable
 local GetGameTimeMilliseconds = GetGameTimeMilliseconds
 
 -- variables
-local startTime = GetTimeStamp() * 1000 - GetGameTimeMilliseconds()
+local uiLoadStartTime = GetTimeStamp() * 1000
+local sessionStartTime = uiLoadStartTime - GetGameTimeMilliseconds()
 -- before the library is fully loaded we just store all logs in a temporary table
 local log = {}
 local temp = {}
@@ -273,6 +274,18 @@ function lib.Create(tag)
 end
 setmetatable(lib, { __call = function(_, tag) return lib.Create(tag) end })
 
+--- @return the login time in milliseconds.
+function lib:GetSessionStartTime()
+    return sessionStartTime
+end
+
+--- We don't actually know the exact time for the UI load, so instead we just use the time when LibDebugLogger.lua was loaded.
+--- Since all log messages will have a timestamp after that, it's good enough for our purpose.
+--- @return the approximate time when the UI was loaded in milliseconds. 
+function lib:GetUiLoadStartTime()
+    return uiLoadStartTime
+end
+
 --- @return true, if logs capture a stack trace.
 function lib:IsTraceLoggingEnabled()
     return settings.logTraces
@@ -316,7 +329,7 @@ end
 local debugInfo = {
     GetDisplayName(),
     GetUnitName("player"),
-    FormatTime(startTime),
+    FormatTime(sessionStartTime),
     GetESOVersionString(),
     GetWorldName(),
     GetString("SI_PLATFORMSERVICETYPE", GetPlatformServiceType()),
@@ -383,7 +396,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
 
             -- we clean up old entries
             local startIndex = math.max(1, #oldLog + #startUpLog - NUM_MAX_ENTRIES)
-            local minTime = startTime - MAX_ENTRY_AGE
+            local minTime = sessionStartTime - MAX_ENTRY_AGE
             for i = startIndex, #oldLog do
                 local entry = oldLog[i]
                 if(entry[ENTRY_TIME_INDEX] >= minTime) then
