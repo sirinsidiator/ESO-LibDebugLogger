@@ -166,8 +166,8 @@ end
 local lastEntry, lastMessage, lastStacktrace
 local function DoLog(level, tag, message, stacktrace)
     local wasDuplicate = false
+    local now = sessionStartTime + GetGameTimeMilliseconds()
     if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[ENTRY_LEVEL_INDEX] ~= level or lastEntry[ENTRY_TAG_INDEX] ~= tag) then
-        local now = startTime + GetGameTimeMilliseconds()
         local entry = {
             now, -- ENTRY_TIME_INDEX
             FormatTime(now), -- ENTRY_FORMATTED_TIME_INDEX
@@ -184,6 +184,8 @@ local function DoLog(level, tag, message, stacktrace)
         lastMessage = message
         lastStacktrace = stacktrace
     else
+        lastEntry[ENTRY_TIME_INDEX] = now
+        lastEntry[ENTRY_FORMATTED_TIME_INDEX] = FormatTime(now)
         lastEntry[ENTRY_OCCURENCES_INDEX] = lastEntry[ENTRY_OCCURENCES_INDEX] + 1
         wasDuplicate = true
     end
