@@ -358,6 +358,16 @@ function lib:ClearLog()
     self.callbackObject:FireCallbacks(lib.CALLBACK_LOG_CLEARED)
 end
 
+--- This method rebuilds the input string in case it has been split up to circumvent the saved variables string length limit.
+--- @return the resulting string
+function lib.CombineSplitStringIfNeeded(input)
+    if(type(input) == "table") then
+        return table.concat(input, "")
+    else
+        return input
+    end
+end
+
 -- initialization
 local AddOnManager = GetAddOnManager()
 local numAddons = AddOnManager:GetNumAddOns()
