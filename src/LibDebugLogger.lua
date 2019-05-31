@@ -461,7 +461,7 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
         local function GetChatProxy()
             if(not chat) then
                 if(LibChatMessage) then
-                    chat = LibChatMessage("LibDebugLogger", "LDL")
+                    chat = LibChatMessage(LIB_IDENTIFIER, "LDL")
                 else
                     chat = {
                         Print = function(self, message) df("[%s] %s", LIB_IDENTIFIER, message) end,
