@@ -6,6 +6,8 @@ local lib = {}
 _G[LIB_IDENTIFIER] = lib
 
 -- constants
+local TAG_INGAME = "UI"
+
 local LOG_LEVEL_DEBUG = "D"
 local LOG_LEVEL_INFO = "I"
 local LOG_LEVEL_WARNING = "W"
@@ -128,8 +130,7 @@ local function SplitLongStringIfNeeded(value)
     return output
 end
 
-local lastEntry, lastMessage, lastStacktrace
-local function DoLog(level, tag, ...)
+local function PrepareMessage(...)
     local message = ""
     local count = select("#", ...)
     if(count > 0) then
@@ -148,11 +149,11 @@ local function DoLog(level, tag, ...)
         end
     end
 
-    local stacktrace
-    if(settings.logTraces) then
-        stacktrace = traceback()
-    end
+    return message
+end
 
+local lastEntry, lastMessage, lastStacktrace
+local function DoLog(level, tag, message, stacktrace)
     if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[ENTRY_LEVEL_INDEX] ~= level or lastEntry[ENTRY_TAG_INDEX] ~= tag) then
         local now = startTime + GetGameTimeMilliseconds()
         local entry = {
@@ -178,24 +179,46 @@ local function DoLog(level, tag, ...)
     PruneLog()
 end
 
+-- add a simple log that should hopefully never fail
+local function LogFallbackMessage(message)
+    if(type(message) == "string") then
+        message = string.sub(message, 1, MAX_SAVE_DATA_LENGTH)
+    else
+        message = "Could not create log entry"
+    end
+    log[#log + 1] = {
+        sessionStartTime + GetGameTimeMilliseconds(),
+        "-",
+        1,
+        LOG_LEVEL_ERROR,
+        LIB_IDENTIFIER,
+        message
+    }
+end
+
+local function LogInternal(level, tag, message, stacktrace)
+    if(not LOG_LEVEL_TO_NUMBER[level] or not LOG_LEVEL_TO_NUMBER[settings.minLogLevel] or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
+
+    local handled, message = pcall(DoLog, level, tag, message, stacktrace)
+
+    if(not handled) then
+        LogFallbackMessage(message)
+    end
+end
+
 local function Log(level, tag, ...)
     if(not LOG_LEVEL_TO_NUMBER[level] or not LOG_LEVEL_TO_NUMBER[settings.minLogLevel] or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[settings.minLogLevel]) then return end
-    local handled, err = pcall(DoLog, level, tag, ...)
-    if(not handled) then -- add a simple log that should hopefully never fail
-        local message
-        if(type(err) == "string") then
-            message = string.sub(err, 1, MAX_SAVE_DATA_LENGTH)
-        else
-            message = "Could not create log entry"
+
+    local handled, message = pcall(PrepareMessage, ...)
+
+    if(handled) then
+        local stacktrace
+        if(settings.logTraces) then
+            stacktrace = traceback()
         end
-        log[#log + 1] = {
-            startTime + GetGameTimeMilliseconds(),
-            "-",
-            1,
-            LOG_LEVEL_ERROR,
-            LIB_IDENTIFIER,
-            message
-        }
+        LogInternal(level, tag, message, stacktrace)
+    else
+        LogFallbackMessage(message)
     end
 end
 
@@ -350,7 +373,9 @@ Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Initializing...\n" .. tconcat(debugInfo, "\
 
 EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_LUA_ERROR, function(eventCode, errorString)
     if(errorString) then
-        Log(LOG_LEVEL_ERROR, "Lua", errorString)
+        local message, stacktrace = errorString:match("(.+)\n(stack traceback:.+)")
+        if(not message) then message = errorString end
+        LogInternal(LOG_LEVEL_ERROR, TAG_INGAME, message, stacktrace)
     end
 end)
 
