@@ -316,7 +316,7 @@ function lib.Create(tag)
 end
 setmetatable(lib, { __call = function(_, tag) return lib.Create(tag) end })
 
---- @return the login time in milliseconds.
+--- @return the time when the client was started in milliseconds.
 function lib:GetSessionStartTime()
     return sessionStartTime
 end
