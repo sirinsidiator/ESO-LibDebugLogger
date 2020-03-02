@@ -360,12 +360,12 @@ function lib:ClearLog()
     self.callbackObject:FireCallbacks(lib.CALLBACK_LOG_CLEARED)
 end
 
---- @param enabled - controls if logs created via d(), df() or CHAT_SYSTEM:AddMessage should be hidden from the chat window
+--- @param enabled - controls if logs created via d(), df() or CHAT_ROUTER:AddDebugMessage should be hidden from the chat window
 function lib:SetBlockChatOutputEnabled(enabled)
     self.blockChatOutput = enabled
 end
 
---- @return true, if logs created via d(), df() or CHAT_SYSTEM:AddMessage are hidden from the chat window
+--- @return true, if logs created via d(), df() or CHAT_ROUTER:AddDebugMessage are hidden from the chat window
 function lib:IsBlockChatOutputEnabled()
     return self.blockChatOutput
 end
@@ -429,7 +429,8 @@ local function LogChatMessage(self, text)
     return lib.blockChatOutput
 end
 
-ZO_PreHook(SharedChatSystem, "AddMessage", LogChatMessage)
+-- ZO_ChatRouter is local, so we have no other choice than to hook the instance, but it's fine since it's the same for everyone
+ZO_PreHook(CHAT_ROUTER, "AddDebugMessage", LogChatMessage)
 
 local function LogAlertMessage(category, soundId, message, ...)
     if(category ~= UI_ALERT_CATEGORY_ERROR or not message) then return end
@@ -480,12 +481,8 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
     Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, addOnInfo[name] or strformat("UI module loaded: %s", name))
 
     if(name == LIB_IDENTIFIER) then
-        -- some addons like pChat use less than ideal ways to intercept chat messages. when we detect them,
-        -- we are forced to overwrite AddMessage on the instance object to make sure the d() calls are intercepted correctly
-        if(rawget(CHAT_SYSTEM, "AddMessage") ~= nil) then
-            Log(LOG_LEVEL_INFO, LIB_IDENTIFIER, "Chat addon compatibility enabled")
-            ZO_PreHook(CHAT_SYSTEM, "AddMessage", LogChatMessage)
-        end
+        -- CHAT_SYSTEM:AddMessage is actually not used for debugging anymore, but pChat still routes d() messages via this method. we'll hook it until pChat is updated
+        ZO_PreHook(CHAT_SYSTEM, "AddMessage", LogChatMessage)
 
         -- we want to avoid having a dependency on LibChatLogger, but still use it in case it is around
         local chat
@@ -494,9 +491,10 @@ EVENT_MANAGER:RegisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED, function(eve
                 if(LibChatMessage) then
                     chat = LibChatMessage(LIB_IDENTIFIER, "LDL")
                 else
+                    local CHAT_ROUTER = CHAT_ROUTER
                     chat = {
-                        Print = function(self, message) df("[%s] %s", LIB_IDENTIFIER, message) end,
-                        Printf = function(self, formatter, ...) return df("[%s] " .. formatter, LIB_IDENTIFIER, ...) end,
+                        Print = function(self, message) CHAT_ROUTER:AddSystemMessage(string.format("[%s] %s", LIB_IDENTIFIER, message)) end,
+                        Printf = function(self, formatter, ...) return CHAT_ROUTER:AddSystemMessage(string.format("[%s] " .. formatter, LIB_IDENTIFIER, ...)) end,
                     }
                 end
             end
