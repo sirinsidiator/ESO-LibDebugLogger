@@ -242,6 +242,7 @@ end
 local Logger = ZO_Object:Subclass()
 
 function Logger:New(tag)
+    assert(tag and tag ~= "", "Invalid tag for logger")
     local obj = ZO_Object.New(self)
     obj.tag = tag
     obj.enabled = true
