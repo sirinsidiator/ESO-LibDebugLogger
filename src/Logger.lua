@@ -1,0 +1,62 @@
+local lib = LibDebugLogger
+local internal = lib.internal
+
+local SUB_LOGGER_TAG_TEMPLATE = "%s/%s"
+
+local Logger = ZO_Object:Subclass()
+internal.class.Logger = Logger
+
+function Logger:New(...)
+    local obj = ZO_Object.New(self)
+    obj:Initialize(...)
+    return obj
+end
+
+function Logger:Initialize(tag)
+    assert(type(tag) == "string" and tag ~= "", "Invalid tag for logger")
+    self.enabled = true
+    self.tag = tag
+end
+
+-- public API
+
+--- Convenience method to create a new instance of the logger with a combined tag. Can be used to separate logs from different files.
+--- @param tag - a string identifier that is appended to the tag of the parent, separated by a slash
+--- @return a new logger instance with the combined tag
+function Logger:Create(tag)
+    return Logger:New(SUB_LOGGER_TAG_TEMPLATE:format(self.tag, tag))
+end
+
+--- setter to turn this logger of so it no longer adds anything to the log when one of its log methods is called.
+--- @param enabled - boolean which turns logging on or off
+function Logger:SetEnabled(enabled)
+    self.enabled = enabled
+end
+
+--- method to log messages with the debug log level
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Debug(...)
+    if(not self.enabled) then return end
+    return internal.Log(internal.LOG_LEVEL_DEBUG, self.tag, ...)
+end
+
+--- method to log messages with the info log level
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Info(...)
+    if(not self.enabled) then return end
+    return internal.Log(internal.LOG_LEVEL_INFO, self.tag, ...)
+end
+
+--- method to log messages with the warning log level
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Warn(...)
+    if(not self.enabled) then return end
+    return internal.Log(internal.LOG_LEVEL_WARNING, self.tag, ...)
+end
+
+--- method to log messages with the error log level
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Error(...)
+    if(not self.enabled) then return end
+    return internal.Log(internal.LOG_LEVEL_ERROR, self.tag, ...)
+end

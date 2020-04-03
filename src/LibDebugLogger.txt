@@ -13,3 +13,15 @@
 ## You can read the full terms at https://account.elderscrollsonline.com/add-on-terms
 
 LibDebugLogger.lua
+
+Constants.lua
+Logger.lua
+Settings.lua
+StartUpConfig.lua
+LogHandler.lua
+
+Callbacks.lua
+API.lua
+Compatibility.lua
+
+Initialization.lua
