@@ -4,6 +4,7 @@ local callback = lib.callback
 
 -- everything in this file is subject to be removed in the future
 
+-- See Callbacks.lua
 lib.CALLBACK_LOG_CLEARED = callback.LOG_CLEARED
 lib.CALLBACK_LOG_PRUNED = callback.LOG_PRUNED
 lib.CALLBACK_LOG_ADDED = callback.LOG_ADDED
