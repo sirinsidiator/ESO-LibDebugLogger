@@ -33,6 +33,14 @@ function Logger:SetEnabled(enabled)
     self.enabled = enabled
 end
 
+--- method to log messages with the passed log level.
+--- @param level - the log level for the logged message. See LOG_LEVEL_* constants in API.lua
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Log(level, ...)
+    if(not self.enabled) then return end
+    return internal.Log(level, self.tag, ...)
+end
+
 --- method to log messages with the verbose log level, only messages with whitelisted tags will be logged
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Verbose(...)
