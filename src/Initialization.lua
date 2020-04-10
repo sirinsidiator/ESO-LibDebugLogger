@@ -81,7 +81,7 @@ local function LogChatMessage(self, text)
     end
 
     internal.LogRaw(internal.LOG_LEVEL_INFO, internal.TAG_INGAME, text, stacktrace)
-    return lib.blockChatOutput
+    return internal.blockChatOutput
 end
 
 -- ZO_ChatRouter is local, so we have no other choice than to hook the instance, but it's fine since it's the same for everyone
