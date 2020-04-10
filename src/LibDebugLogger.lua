@@ -17,6 +17,7 @@ local lib = {
     internal = {
         class = {},
         log = {},
+        verboseWhitelist = {},
         callbackObject = callbackObject,
         FireCallbacks = FireCallbacks,
         UI_LOAD_START_TIME = UI_LOAD_START_TIME,

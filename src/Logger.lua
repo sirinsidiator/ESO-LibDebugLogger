@@ -33,6 +33,13 @@ function Logger:SetEnabled(enabled)
     self.enabled = enabled
 end
 
+--- method to log messages with the verbose log level, only messages with whitelisted tags will be logged
+--- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
+function Logger:Verbose(...)
+    if(not self.enabled) then return end
+    return internal.Log(internal.LOG_LEVEL_VERBOSE, self.tag, ...)
+end
+
 --- method to log messages with the debug log level
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Debug(...)

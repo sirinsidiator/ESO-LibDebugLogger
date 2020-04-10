@@ -139,12 +139,13 @@ local function LogFallbackMessage(message)
     internal:FireCallbacks(callback.LOG_ADDED, log[#log], false)
 end
 
-local function ShouldLog(level)
+local function ShouldLog(level, tag)
     local LOG_LEVEL_TO_NUMBER = internal.LOG_LEVEL_TO_NUMBER
     if
         not LOG_LEVEL_TO_NUMBER[level]
         or not LOG_LEVEL_TO_NUMBER[internal.settings.minLogLevel]
         or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[internal.settings.minLogLevel]
+        or (level == internal.LOG_LEVEL_VERBOSE and not internal.verboseWhitelist[tag])
     then
         return false
     end
@@ -160,13 +161,13 @@ local function TryLog(level, tag, message, stacktrace)
 end
 
 local function LogRaw(level, tag, message, stacktrace)
-    if(not ShouldLog(level)) then return end
+    if(not ShouldLog(level, tag)) then return end
     TryLog(level, tag, message, stacktrace)
 end
 internal.LogRaw = LogRaw
 
 local function Log(level, tag, ...)
-    if(not ShouldLog(level)) then return end
+    if(not ShouldLog(level, tag)) then return end
 
     local handled, message = pcall(PrepareMessage, ...)
 

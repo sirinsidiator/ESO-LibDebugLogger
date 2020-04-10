@@ -3,6 +3,7 @@ local internal = lib.internal
 
 internal.TAG_INGAME = "UI"
 
+internal.LOG_LEVEL_VERBOSE = "V"
 internal.LOG_LEVEL_DEBUG = "D"
 internal.LOG_LEVEL_INFO = "I"
 internal.LOG_LEVEL_WARNING = "W"
@@ -22,6 +23,7 @@ internal.ENTRY_MESSAGE_INDEX = 6
 internal.ENTRY_STACK_INDEX = 7
 
 internal.LOG_LEVELS = {
+    internal.LOG_LEVEL_VERBOSE,
     internal.LOG_LEVEL_DEBUG,
     internal.LOG_LEVEL_INFO,
     internal.LOG_LEVEL_WARNING,
@@ -29,6 +31,7 @@ internal.LOG_LEVELS = {
 }
 
 internal.LOG_LEVEL_TO_NUMBER = {
+    [internal.LOG_LEVEL_VERBOSE] = 0,
     [internal.LOG_LEVEL_DEBUG] = 1,
     [internal.LOG_LEVEL_INFO] = 2,
     [internal.LOG_LEVEL_WARNING] = 3,
@@ -36,6 +39,7 @@ internal.LOG_LEVEL_TO_NUMBER = {
 }
 
 internal.LOG_LEVEL_TO_STRING = {
+    [internal.LOG_LEVEL_VERBOSE] = "verbose",
     [internal.LOG_LEVEL_DEBUG] = "debug",
     [internal.LOG_LEVEL_INFO] = "info",
     [internal.LOG_LEVEL_WARNING] =  "warning",

@@ -95,9 +95,9 @@ function internal:InitializeSettings()
         if(not handled) then
             local out = {}
             out[#out + 1] = "/debuglogger <command> [argument]"
-            out[#out + 1] = "<stack>|u129%:0: :|u[on/off]|u286%:0:       :|uEnables or disables trace logging"
-            out[#out + 1] = "<level>|u125%:0: :|u[d/i/w/e]|u288%:0:      :|uSets the minimum level for logging"
-            out[#out + 1] = "<clear>|u62%:0:  :|u[auto/12h/24h]|u68%:0:  :|uDeletes all log entries"
+            out[#out + 1] = "<stack>|u100%:0: :|u[on/off]|u270%:0:       :|uEnables or disables trace logging"
+            out[#out + 1] = "<level>|u120%:0: :|u[v/d/i/w/e]|u180%:0:    :|uSets the minimum level for logging"
+            out[#out + 1] = "<clear>|u600%:0:                            :|uDeletes all log entries"
             out[#out + 1] = "Example: /debuglogger stack on"
             chat:Print(table.concat(out, "\n"))
         end

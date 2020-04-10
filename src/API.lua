@@ -10,6 +10,7 @@ lib.GetAPIVersion = function() return 2 end
 lib.DEFAULT_SETTINGS = internal.defaultSettings
 lib.TAG_INGAME = internal.TAG_INGAME
 
+lib.LOG_LEVEL_VERBOSE = internal.LOG_LEVEL_VERBOSE
 lib.LOG_LEVEL_DEBUG = internal.LOG_LEVEL_DEBUG
 lib.LOG_LEVEL_INFO = internal.LOG_LEVEL_INFO
 lib.LOG_LEVEL_WARNING = internal.LOG_LEVEL_WARNING
