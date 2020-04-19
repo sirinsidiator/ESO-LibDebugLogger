@@ -60,10 +60,13 @@ lib.UI_LOAD_START_TIME = internal.UI_LOAD_START_TIME
 
 --- @param tag - a string identifier that is used to identify entries made via this logger
 --- @return a new logger instance with the passed tag
-function lib.Create(tag)
+function lib:Create(tag)
+    if(self ~= lib) then -- this is so both calling lib.Create and lib:Create work
+        tag = self
+    end
     return Logger:New(tag)
 end
-setmetatable(lib, { __call = function(_, ...) return lib.Create(...) end })
+setmetatable(lib, { __call = function(_, ...) return lib:Create(...) end })
 
 --- @return true, if logs capture a stack trace.
 function lib:IsTraceLoggingEnabled()
@@ -121,7 +124,7 @@ end
 
 --- Register to a callback fired by the library. Usage is the same as with CALLBACK_MANAGER:RegisterCallback.
 --- The available callback names are located in Callbacks.lua
---- Callback functions should be as lightweight as possible. If you plan to use expensive calls, 
+--- Callback functions should be as lightweight as possible. If you plan to use expensive calls,
 --- defer the execution with zo_callLater!
 function lib:RegisterCallback(...)
     return internal.callbackObject:RegisterCallback(...)
