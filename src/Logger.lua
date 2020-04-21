@@ -16,15 +16,26 @@ function Logger:Initialize(tag)
     assert(type(tag) == "string" and tag ~= "", "Invalid tag for logger")
     self.enabled = true
     self.tag = tag
+    self.originalTag = tag
 end
 
 -- public API
 
 --- Convenience method to create a new instance of the logger with a combined tag. Can be used to separate logs from different files.
---- @param tag - a string identifier that is appended to the tag of the parent, separated by a slash
+--- @param tag - a string identifier that is appended to the original tag of the parent, separated by a slash
 --- @return a new logger instance with the combined tag
 function Logger:Create(tag)
-    return Logger:New(SUB_LOGGER_TAG_TEMPLATE:format(self.tag, tag))
+    return Logger:New(SUB_LOGGER_TAG_TEMPLATE:format(self.originalTag, tag))
+end
+
+--- Convenience method to dynamically set a child tag without having to call Create to instantiate a new sub logger.
+--- @param tag - a string identifier that is appended to the original tag, separated by a slash. No tag or an empty string will restore the original tag
+function Logger:SetSubTag(tag)
+    if not tag or tag == "" then
+        self.tag = self.originalTag
+    else
+        self.tag = SUB_LOGGER_TAG_TEMPLATE:format(self.originalTag, tag)
+    end
 end
 
 --- setter to turn this logger of so it no longer adds anything to the log when one of its log methods is called.
