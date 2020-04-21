@@ -80,6 +80,14 @@ local function PrepareMessage(...)
             for i = 1, select("#", ...) do
                 temp[i] = tostring(select(i, ...))
             end
+
+            if(internal.appendFormattingErrors and message ~= "") then
+                -- try to append the error without the stack trace in case we failed to format it earlier
+                local index = message:find("\nstack traceback")
+                if(index) then
+                    temp[#temp + 1] = message:sub(1, index)
+                end
+            end
             message = tconcat(temp, " ")
         end
     end

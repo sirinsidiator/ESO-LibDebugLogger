@@ -93,6 +93,16 @@ function lib:GetLog()
     return internal.log
 end
 
+--- When toggled on, the log handler will append errors in case the first argument was interpreted as a formatting string,
+--- but the subsequent call to string.format failed. This is purely for the convenience of authors who try to debug their log output
+--- and as such it doesn't have a corresponding setting.
+--- Intended use is either via "/script d(LibDebugLogger:ToggleFormattingErrors())" or in StartUpConfig.lua
+--- @return the new state
+function lib:ToggleFormattingErrors()
+    internal.appendFormattingErrors = not internal.appendFormattingErrors
+    return internal.appendFormattingErrors
+end
+
 --- removes all entries from the log and returns the log table.
 --- @return returns the log table.
 function lib:ClearLog()
