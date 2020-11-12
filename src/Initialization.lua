@@ -130,7 +130,8 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_ACTIVATED, function(event, i
     end
     local name = initial and "Initial loading" or "Loading"
     local prefix = initial and "approximate " or ""
-    internal.Log(internal.LOG_LEVEL_DEBUG, lib.id, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
+    local level = regularLoadingScreen and internal.LOG_LEVEL_DEBUG or internal.LOG_LEVEL_INFO
+    internal.Log(level, lib.id, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
 
     regularLoadingScreen = true
 end)
