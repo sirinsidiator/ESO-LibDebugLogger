@@ -17,6 +17,8 @@ function Logger:Initialize(tag)
     self.enabled = true
     self.tag = tag
     self.originalTag = tag
+    self.minLevelOverride = nil
+    self.logTracesOverride = nil
 end
 
 -- public API
@@ -44,45 +46,59 @@ function Logger:SetEnabled(enabled)
     self.enabled = enabled
 end
 
+--- setter to define a non-persistent override for the minimum log level from the global configuration. Passing nil clears the override value.
+--- this method is intended to allow authors to provide users with a way to temporarily enable debug logging on a per-addon basis (e.g. via a LAM button).
+--- @param level - sets the override for the minimum log level.
+function Logger:SetMinLevelOverride(level)
+    self.minLevelOverride = level
+end
+
+--- setter to define a non-persistent override for the stack trace logging from the global configuration. Passing nil clears the override value.
+--- this method is intended to allow authors to provide users with a way to temporarily enable debug logging on a per-addon basis (e.g. via a LAM button).
+--- @param enabled - overrides if logs should capture a stack trace for this logger.
+function Logger:SetLogTracesOverride(enabled)
+    self.logTracesOverride = enabled
+end
+
 --- method to log messages with the passed log level.
 --- @param level - the log level for the logged message. See LOG_LEVEL_* constants in API.lua
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Log(level, ...)
     if(not self.enabled) then return end
-    return internal.Log(level, self.tag, ...)
+    return internal.Log(level, self, ...)
 end
 
 --- method to log messages with the verbose log level, only messages with whitelisted tags will be logged
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Verbose(...)
     if(not self.enabled) then return end
-    return internal.Log(internal.LOG_LEVEL_VERBOSE, self.tag, ...)
+    return internal.Log(internal.LOG_LEVEL_VERBOSE, self, ...)
 end
 
 --- method to log messages with the debug log level
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Debug(...)
     if(not self.enabled) then return end
-    return internal.Log(internal.LOG_LEVEL_DEBUG, self.tag, ...)
+    return internal.Log(internal.LOG_LEVEL_DEBUG, self, ...)
 end
 
 --- method to log messages with the info log level
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Info(...)
     if(not self.enabled) then return end
-    return internal.Log(internal.LOG_LEVEL_INFO, self.tag, ...)
+    return internal.Log(internal.LOG_LEVEL_INFO, self, ...)
 end
 
 --- method to log messages with the warning log level
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Warn(...)
     if(not self.enabled) then return end
-    return internal.Log(internal.LOG_LEVEL_WARNING, self.tag, ...)
+    return internal.Log(internal.LOG_LEVEL_WARNING, self, ...)
 end
 
 --- method to log messages with the error log level
 --- @param ... - values to log, each of which will get passed through tostring, or string.format in case the first argument contains a formatting token
 function Logger:Error(...)
     if(not self.enabled) then return end
-    return internal.Log(internal.LOG_LEVEL_ERROR, self.tag, ...)
+    return internal.Log(internal.LOG_LEVEL_ERROR, self, ...)
 end

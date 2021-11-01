@@ -147,12 +147,14 @@ local function LogFallbackMessage(message)
     internal:FireCallbacks(callback.LOG_ADDED, log[#log], false)
 end
 
-local function ShouldLog(level, tag)
+local function ShouldLog(level, tag, minLevelOverride)
+    local minLevel = internal.settings.minLogLevel
+    if minLevelOverride ~= nil then minLevel = minLevelOverride end
     local LOG_LEVEL_TO_NUMBER = internal.LOG_LEVEL_TO_NUMBER
     if
         not LOG_LEVEL_TO_NUMBER[level]
-        or not LOG_LEVEL_TO_NUMBER[internal.settings.minLogLevel]
-        or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[internal.settings.minLogLevel]
+        or not LOG_LEVEL_TO_NUMBER[minLevel]
+        or LOG_LEVEL_TO_NUMBER[level] < LOG_LEVEL_TO_NUMBER[minLevel]
         or (level == internal.LOG_LEVEL_VERBOSE and not internal.verboseWhitelist[tag])
     then
         return false
@@ -174,17 +176,19 @@ local function LogRaw(level, tag, message, stacktrace)
 end
 internal.LogRaw = LogRaw
 
-local function Log(level, tag, ...)
-    if(not ShouldLog(level, tag)) then return end
+local function Log(level, config, ...)
+    if(not ShouldLog(level, config.tag, config.minLevelOverride)) then return end
 
     local handled, message = pcall(PrepareMessage, ...)
 
     if(handled) then
         local stacktrace
-        if(internal.settings.logTraces) then
+        local shouldLogTraces = internal.settings.logTraces
+        if config.logTracesOverride ~= nil then shouldLogTraces = config.logTracesOverride end
+        if shouldLogTraces then
             stacktrace = traceback()
         end
-        TryLog(level, tag, message, stacktrace)
+        TryLog(level, config.tag, message, stacktrace)
     else
         LogFallbackMessage(message)
     end

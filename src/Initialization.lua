@@ -6,6 +6,9 @@ local tconcat = table.concat
 local traceback = debug.traceback
 local zo_strformat = zo_strformat
 local GetGameTimeMilliseconds = GetGameTimeMilliseconds
+local LDL_LOGGER_CONFIG = {
+    tag = lib.id
+}
 
 local UNKNOWN_STATE_STRING = "unknown state (%d)"
 local STATE_STRING = {
@@ -146,7 +149,7 @@ if not success then
     LogErrorMessage(debugInfo)
     debugInfo = ""
 end
-internal.Log(internal.LOG_LEVEL_INFO, lib.id, "Initializing..." .. debugInfo)
+internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initializing..." .. debugInfo)
 
 -- ingame logging hooks
 
@@ -196,10 +199,10 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_ACTIVATED, function(event, i
     else
         for name, message in pairs(addOnInfo) do
             -- should not happen, but we want to know it in case it does
-            internal.Log(internal.LOG_LEVEL_WARNING, lib.id, "No loaded event detected for %s", name)
+            internal.Log(internal.LOG_LEVEL_WARNING, LDL_LOGGER_CONFIG, "No loaded event detected for %s", name)
         end
         for name, message in pairs(skippedAddOnInfo) do
-            internal.Log(internal.LOG_LEVEL_WARNING, lib.id, message)
+            internal.Log(internal.LOG_LEVEL_WARNING, LDL_LOGGER_CONFIG, message)
         end
     end
 
@@ -213,20 +216,20 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_ACTIVATED, function(event, i
     local name = initial and "Initial loading" or "Loading"
     local prefix = initial and "approximate " or ""
     local level = regularLoadingScreen and internal.LOG_LEVEL_DEBUG or internal.LOG_LEVEL_INFO
-    internal.Log(level, lib.id, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
+    internal.Log(level, LDL_LOGGER_CONFIG, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
 
     regularLoadingScreen = true
 end)
 
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_DEACTIVATED, function(event)
     internal.settings.loadScreenStartTime = internal.SESSION_START_TIME + GetGameTimeMilliseconds()
-    internal.Log(internal.LOG_LEVEL_DEBUG, lib.id, "Loading screen started")
+    internal.Log(internal.LOG_LEVEL_DEBUG, LDL_LOGGER_CONFIG, "Loading screen started")
 end)
 
 -- initialization
 
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_ADD_ON_LOADED, function(event, name)
-    internal.Log(internal.LOG_LEVEL_INFO, lib.id, addOnInfo[name] or strformat("UI module loaded: %s", name))
+    internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, addOnInfo[name] or strformat("UI module loaded: %s", name))
     addOnInfo[name] = nil
 
     if(name == lib.id) then
@@ -236,6 +239,6 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_ADD_ON_LOADED, function(event, name
         internal:InitializeSettings()
         internal:InitializeLog()
 
-        internal.Log(internal.LOG_LEVEL_INFO, lib.id, "Initialization complete")
+        internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initialization complete")
     end
 end)
