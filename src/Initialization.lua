@@ -155,6 +155,13 @@ internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initializing..." .. de
 
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, errorString)
     if(errorString) then
+        if internal.tlcStacktrace then
+            local name = errorString:match("TopLevelControl (.*) cannot be parented to any control but GuiRoot.")
+            if name and internal.tlcStacktrace[name] then
+                errorString = errorString .. "\n" .. internal.tlcStacktrace[name]
+                internal.tlcStacktrace[name] = nil
+            end
+        end
         LogErrorMessage(errorString)
     end
 end)
@@ -232,6 +239,13 @@ if internal.logOriginStacktrace then
         end
         return originalzo_callLater(func, ...)
     end
+
+    internal.tlcStacktrace = {}
+    ZO_PreHook(WINDOW_MANAGER, "CreateControl", function(_, name, parent, type)
+        if type == CT_TOPLEVELCONTROL then
+            internal.tlcStacktrace[name or ""] = debug.traceback()
+        end
+    end)
 end
 
 -- loading screen duration logging
