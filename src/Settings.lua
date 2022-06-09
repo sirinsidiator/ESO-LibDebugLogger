@@ -12,31 +12,33 @@ internal.defaultSettings = {
 internal.settings = ZO_ShallowTableCopy(internal.defaultSettings)
 
 function internal:InitializeSettings()
-    if LibDebugLoggerSettings then
-        local tempSettings = self.settings
-        self.settings = LibDebugLoggerSettings
+    if not internal.ignoreSavedVars then
+        if LibDebugLoggerSettings then
+            local tempSettings = self.settings
+            self.settings = LibDebugLoggerSettings
 
-        -- upgrade settings
-        for key, value in pairs(tempSettings) do
-            if(self.settings[key] == nil) then
-                self.settings[key] = value
+            -- upgrade settings
+            for key, value in pairs(tempSettings) do
+                if(self.settings[key] == nil) then
+                    self.settings[key] = value
+                end
             end
+
+            for key in pairs(self.settings) do
+                if(tempSettings[key] == nil) then
+                    self.settings[key] = nil
+                end
+            end
+
+            self.settings.version = tempSettings.version
+        else
+            LibDebugLoggerSettings = self.settings
         end
 
-        for key in pairs(self.settings) do
-            if(tempSettings[key] == nil) then
-                self.settings[key] = nil
-            end
+        if LibDebugLoggerSettings.version < 2 then
+            -- just as a hint for the external logviewer since we have changed the initialized message
+            LibDebugLoggerSettings.version = 2
         end
-
-        self.settings.version = tempSettings.version
-    else
-        LibDebugLoggerSettings = self.settings
-    end
-
-    if LibDebugLoggerSettings.version < 2 then
-        -- just as a hint for the external logviewer since we have changed the initialized message
-        LibDebugLoggerSettings.version = 2
     end
 
     -- we want to avoid having a dependency on LibChatLogger, but still use it in case it is around
