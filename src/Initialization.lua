@@ -188,6 +188,19 @@ end
 ZO_PreHook("ZO_Alert", LogAlertMessage)
 ZO_PreHook("ZO_AlertNoSuppression", LogAlertMessage)
 
+if internal.logOriginStacktrace then
+    local originalzo_callLater = zo_callLater
+    function zo_callLater(originalFunc, ...)
+        local stacktrace = debug.traceback()
+        local func = function(...)
+            internal.originStacktrace = stacktrace
+            originalFunc(...)
+            internal.originStacktrace = nil
+        end
+        return originalzo_callLater(func, ...)
+    end
+end
+
 -- loading screen duration logging
 
 local regularLoadingScreen = false

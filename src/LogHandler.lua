@@ -99,6 +99,9 @@ local lastEntry, lastMessage, lastStacktrace
 local function DoLog(level, tag, message, stacktrace)
     local wasDuplicate = false
     local now = internal.SESSION_START_TIME + GetGameTimeMilliseconds()
+    if stacktrace and internal.originStacktrace then
+        stacktrace = stacktrace .. "\nregistered by:\n" .. internal.originStacktrace
+    end
     if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[internal.ENTRY_LEVEL_INDEX] ~= level or lastEntry[internal.ENTRY_TAG_INDEX] ~= tag) then
         local entry = {
             now, -- ENTRY_TIME_INDEX
