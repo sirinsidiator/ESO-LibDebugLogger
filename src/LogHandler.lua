@@ -95,14 +95,22 @@ local function PrepareMessage(...)
     return message
 end
 
-local lastEntry, lastMessage, lastStacktrace
+local lastEntry, lastMessage, lastStacktrace, wasDuplicate
+local function IsSameAsLastMessage(level, tag, message, stacktrace)
+    if not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[internal.ENTRY_LEVEL_INDEX] ~= level or lastEntry[internal.ENTRY_TAG_INDEX] ~= tag then
+        return false
+    end
+    return true
+end
+
 local function DoLog(level, tag, message, stacktrace)
-    local wasDuplicate = false
     local now = internal.SESSION_START_TIME + GetGameTimeMilliseconds()
     if stacktrace and internal.originStacktrace then
         stacktrace = stacktrace .. "\nregistered by:\n" .. internal.originStacktrace
     end
-    if(not lastEntry or lastMessage ~= message or lastStacktrace ~= stacktrace or lastEntry[internal.ENTRY_LEVEL_INDEX] ~= level or lastEntry[internal.ENTRY_TAG_INDEX] ~= tag) then
+    local updatedExisting = false
+    local isDuplicate = IsSameAsLastMessage(level, tag, message, stacktrace)
+    if not isDuplicate or not wasDuplicate then
         local entry = {
             now, -- ENTRY_TIME_INDEX
             FormatTime(now), -- ENTRY_FORMATTED_TIME_INDEX
@@ -123,9 +131,10 @@ local function DoLog(level, tag, message, stacktrace)
         lastEntry[internal.ENTRY_TIME_INDEX] = now
         lastEntry[internal.ENTRY_FORMATTED_TIME_INDEX] = FormatTime(now)
         lastEntry[internal.ENTRY_OCCURENCES_INDEX] = lastEntry[internal.ENTRY_OCCURENCES_INDEX] + 1
-        wasDuplicate = true
+        updatedExisting = true
     end
-    internal:FireCallbacks(callback.LOG_ADDED, lastEntry, wasDuplicate)
+    internal:FireCallbacks(callback.LOG_ADDED, lastEntry, updatedExisting)
+    wasDuplicate = isDuplicate
 
     -- need to trim the log during the session in case some addon is producing an error every frame for the whole session without the user noticing, until they cannot log in next time
     PruneLog()
