@@ -248,6 +248,13 @@ if internal.logOriginStacktrace then
     end)
 end
 
+if internal.logPerformanceStats then
+    local PERFORMANCE_LOG_INTERVAL = 10000
+    EVENT_MANAGER:RegisterForUpdate(lib.id .. "PerformanceStats", PERFORMANCE_LOG_INTERVAL, function()
+        internal.Log(internal.LOG_LEVEL_DEBUG, LDL_LOGGER_CONFIG, "fps: %.2f, latency: %d, memory usage: %d", GetFramerate(), GetLatency(), collectgarbage("count") * 1024)
+    end)
+end
+
 -- loading screen duration logging
 
 local regularLoadingScreen = false
