@@ -306,6 +306,15 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_ADD_ON_LOADED, function(event, name
         internal:InitializeSettings()
         internal:InitializeLog()
 
+        if rawget(ZO_Object, "__call") then
+            local call = ZO_Object.__call
+            internal.Log(internal.LOG_LEVEL_WARNING, LDL_LOGGER_CONFIG, "ZO_Object has been modified with a __call metamethod")
+        end
+        if rawget(ZO_InitializingObject, "__call") then
+            local call = ZO_InitializingObject.__call
+            internal.Log(internal.LOG_LEVEL_WARNING, LDL_LOGGER_CONFIG, "ZO_InitializingObject has been modified with a __call metamethod")
+        end
+
         internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initialization complete")
     end
 end)
