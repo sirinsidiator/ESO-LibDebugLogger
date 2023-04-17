@@ -43,8 +43,10 @@ local GAMEPAD_TYPE = {
     [GAMEPAD_TYPE_SWITCH] = "switch gamepad",
     [GAMEPAD_TYPE_XBOX] = "xbox gamepad",
     [GAMEPAD_TYPE_XBSX] = "xbox series-x gamepad",
-    [GAMEPAD_TYPE_HERON] = "stadia gamepad",
 }
+if GetAPIVersion() < 101038 then
+    GAMEPAD_TYPE[GAMEPAD_TYPE_HERON] = "stadia gamepad"
+end
 
 -- player info logging
 
