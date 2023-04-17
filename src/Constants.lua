@@ -21,6 +21,7 @@ internal.ENTRY_LEVEL_INDEX = 4
 internal.ENTRY_TAG_INDEX = 5
 internal.ENTRY_MESSAGE_INDEX = 6
 internal.ENTRY_STACK_INDEX = 7
+internal.ENTRY_ERROR_CODE_INDEX = 8
 
 internal.LOG_LEVELS = {
     internal.LOG_LEVEL_VERBOSE,

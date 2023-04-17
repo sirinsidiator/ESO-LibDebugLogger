@@ -139,11 +139,11 @@ local function GenerateDebugInfo()
     return tconcat(debugInfo, "\n")
 end
 
-local function LogErrorMessage(errorString)
+local function LogErrorMessage(errorString, errorCode)
     local message, stacktrace = errorString:match("(.+)\n(stack traceback:.+)")
     if(not message) then message = errorString end
 
-    internal.LogRaw(internal.LOG_LEVEL_ERROR, internal.TAG_INGAME, message, stacktrace)
+    internal.LogRaw(internal.LOG_LEVEL_ERROR, internal.TAG_INGAME, message, stacktrace, errorCode)
 end
 
 local success, debugInfo = pcall(GenerateDebugInfo)
@@ -155,7 +155,7 @@ internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initializing..." .. de
 
 -- ingame logging hooks
 
-EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, errorString)
+EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, errorString, errorCode)
     if(errorString) then
         if internal.tlcStacktrace then
             local name = errorString:match("TopLevelControl (.*) cannot be parented to any control but GuiRoot.")
@@ -164,7 +164,7 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, erro
                 internal.tlcStacktrace[name] = nil
             end
         end
-        LogErrorMessage(errorString)
+        LogErrorMessage(errorString, errorCode)
     end
 end)
 

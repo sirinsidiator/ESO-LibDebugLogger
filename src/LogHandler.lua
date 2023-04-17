@@ -46,7 +46,7 @@ local function PruneLog()
 end
 
 local function SplitLongStringIfNeeded(value)
-    if(not value) then return nil end
+    if(not value) then return "" end
 
     local output = value
     local byteLength = #value
@@ -103,7 +103,7 @@ local function IsSameAsLastMessage(level, tag, message, stacktrace)
     return true
 end
 
-local function DoLog(level, tag, message, stacktrace)
+local function DoLog(level, tag, message, stacktrace, errorCode)
     local now = internal.SESSION_START_TIME + GetGameTimeMilliseconds()
     if stacktrace and internal.originStacktrace then
         stacktrace = stacktrace .. "\nregistered by:\n" .. internal.originStacktrace
@@ -118,7 +118,8 @@ local function DoLog(level, tag, message, stacktrace)
             level, -- ENTRY_LEVEL_INDEX
             tag, -- ENTRY_TAG_INDEX
             SplitLongStringIfNeeded(message), -- ENTRY_MESSAGE_INDEX
-            SplitLongStringIfNeeded(stacktrace) -- ENTRY_STACK_INDEX
+            SplitLongStringIfNeeded(stacktrace), -- ENTRY_STACK_INDEX
+            errorCode, -- ENTRY_ERROR_CODE_INDEX
         }
 
         local log = internal.log
@@ -174,17 +175,17 @@ local function ShouldLog(level, tag, minLevelOverride)
     return true
 end
 
-local function TryLog(level, tag, message, stacktrace)
-    local handled, message = pcall(DoLog, level, tag, message, stacktrace)
+local function TryLog(level, tag, message, stacktrace, errorCode)
+    local handled, message = pcall(DoLog, level, tag, message, stacktrace, errorCode)
 
     if(not handled) then
         LogFallbackMessage(message)
     end
 end
 
-local function LogRaw(level, tag, message, stacktrace)
+local function LogRaw(level, tag, message, stacktrace, errorCode)
     if(not ShouldLog(level, tag)) then return end
-    TryLog(level, tag, message, stacktrace)
+    TryLog(level, tag, message, stacktrace, errorCode)
 end
 internal.LogRaw = LogRaw
 

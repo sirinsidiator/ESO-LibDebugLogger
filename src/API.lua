@@ -49,6 +49,8 @@ lib.ENTRY_TAG_INDEX = internal.ENTRY_TAG_INDEX
 lib.ENTRY_MESSAGE_INDEX = internal.ENTRY_MESSAGE_INDEX
 --- index for the stack trace in log entries
 lib.ENTRY_STACK_INDEX = internal.ENTRY_STACK_INDEX
+--- index for the error code in log entries
+lib.ENTRY_ERROR_CODE_INDEX = internal.ENTRY_ERROR_CODE_INDEX
 
 --- The time when the client was started in milliseconds.
 lib.SESSION_START_TIME = internal.SESSION_START_TIME
