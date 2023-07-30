@@ -26,7 +26,8 @@ local PLATFORMS = {
     [2] = "Xbox",
     [3] = "PC - DMM",
     [4] = "PC - Steam",
-    [5] = "Stadia"
+    [5] = "Stadia",
+    [6] = "PC - Epic",
 }
 
 local FULLSCREEN_MODE = {
