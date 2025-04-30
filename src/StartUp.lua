@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2025 sirinsidiator
+--
+-- SPDX-License-Identifier: Artistic-2.0
+
 -- first thing we do is to measure the start time
 local UI_LOAD_START_TIME = GetTimeStamp() * 1000
 local SESSION_START_TIME = UI_LOAD_START_TIME - GetGameTimeMilliseconds()
