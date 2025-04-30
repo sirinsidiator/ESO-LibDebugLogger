@@ -303,8 +303,10 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_ADD_ON_LOADED, function(event, name
     addOnInfo[name] = nil
 
     if(name == lib.id) then
-        -- CHAT_SYSTEM:AddMessage is actually not used for debugging anymore, but pChat still routes d() messages via this method. we'll hook it until pChat is updated
-        ZO_PreHook(CHAT_SYSTEM, "AddMessage", LogChatMessage) -- TODO remove
+        if not IsConsoleUI() then
+            -- CHAT_SYSTEM:AddMessage is actually not used for debugging anymore, but pChat still routes d() messages via this method. we'll hook it until pChat is updated
+            ZO_PreHook(CHAT_SYSTEM, "AddMessage", LogChatMessage) -- TODO remove
+        end
 
         internal:InitializeSettings()
         internal:InitializeLog()
