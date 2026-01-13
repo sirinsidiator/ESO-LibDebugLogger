@@ -25,13 +25,12 @@ local STATE_STRING = {
     [ADDON_STATE_ERROR_STATE_UNABLE_TO_LOAD] = "failed to load",
 }
 local PLATFORMS = {
-    [0] = "PC",
-    [1] = "Playstation",
-    [2] = "Xbox",
-    [3] = "PC - DMM",
-    [4] = "PC - Steam",
-    [5] = "Stadia",
-    [6] = "PC - Epic",
+    [PLATFORM_SERVICE_TYPE_ZOS] = "PC",
+    [PLATFORM_SERVICE_TYPE_PSN] = "Playstation",
+    [PLATFORM_SERVICE_TYPE_XBL] = "Xbox",
+    [PLATFORM_SERVICE_TYPE_DMM] = "PC - DMM",
+    [PLATFORM_SERVICE_TYPE_STEAM] = "PC - Steam",
+    [PLATFORM_SERVICE_TYPE_EPIC] = "PC - Epic",
 }
 
 local FULLSCREEN_MODE = {
