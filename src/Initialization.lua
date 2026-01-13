@@ -41,17 +41,18 @@ local FULLSCREEN_MODE = {
 
 local GAMEPAD_TYPE = {
     [GAMEPAD_TYPE_NONE] = "no gamepad",
-    [GAMEPAD_TYPE_PS4] = "ps4 gamepad",
-    [GAMEPAD_TYPE_PS4_NO_TOUCHPAD] = "ps4 gamepad (no touchpad)",
-    [GAMEPAD_TYPE_PS5] = "ps5 gamepad",
-    [GAMEPAD_TYPE_SWITCH] = "switch gamepad",
     [GAMEPAD_TYPE_XBOX] = "xbox gamepad",
+    [GAMEPAD_TYPE_PS4] = "ps4 gamepad",
+    [GAMEPAD_TYPE_SWITCH] = "switch gamepad",
+    [GAMEPAD_TYPE_STADIA] = "stadia gamepad",
+    [GAMEPAD_TYPE_PS5] = "ps5 gamepad",
     [GAMEPAD_TYPE_XBSX] = "xbox series-x gamepad",
 }
-if GetAPIVersion() < 101038 then
-    GAMEPAD_TYPE[GAMEPAD_TYPE_HERON] = "stadia gamepad"
+if GetAPIVersion() < 101049 then
+    GAMEPAD_TYPE[GAMEPAD_TYPE_PS4_NO_TOUCHPAD] = "ps4 gamepad (no touchpad)"
+else
+    GAMEPAD_TYPE[GAMEPAD_TYPE_DEPRECATED] = "deprecated"
 end
-
 -- player info logging
 
 local AddOnManager = GetAddOnManager()
