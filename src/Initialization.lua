@@ -172,7 +172,7 @@ LogPerformance("init")
 -- ingame logging hooks
 
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, errorString, errorCode)
-    if(errorString and errorCode ~= internal.TIME_SYNC_ERROR_CODE) then
+    if(errorString and not internal.TIME_SYNC_ERROR_CODE[errorCode]) then
         if internal.tlcStacktrace then
             local name = errorString:match("TopLevelControl (.*) cannot be parented to any control but GuiRoot.")
             if name and internal.tlcStacktrace[name] then
