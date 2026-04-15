@@ -142,7 +142,8 @@ local function GenerateDebugInfo()
         strformat("%d x %d", GuiRoot:GetWidth(), GuiRoot:GetHeight()),
         customScale,
         GAMEPAD_TYPE[GetMostRecentGamepadType()],
-        GetTrialInfo() > 0 and "trial account" or "regular account"
+        GetTrialInfo() > 0 and "trial account" or "regular account",
+        GetCVar("ForceConsoleFlow.2") == "1" and "force console flow" or "no console flow"
     }
     return tconcat(debugInfo, "\n")
 end
