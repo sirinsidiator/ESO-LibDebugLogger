@@ -13,6 +13,9 @@ local GetGameTimeMilliseconds = GetGameTimeMilliseconds
 local LDL_LOGGER_CONFIG = {
     tag = lib.id
 }
+local LDL_LOGGER_PERF_CONFIG = {
+    tag = lib.id .. "/" .. "PerformanceStats"
+}
 
 local UNKNOWN_STATE_STRING = "unknown state (%d)"
 local STATE_STRING = {
@@ -144,6 +147,12 @@ local function GenerateDebugInfo()
     return tconcat(debugInfo, "\n")
 end
 
+local function LogPerformance(trigger, extra)
+    if not internal.logPerformanceStats then return end
+    internal.Log(internal.LOG_LEVEL_DEBUG, LDL_LOGGER_PERF_CONFIG, "fps: %.2f, latency: %d, memory usage: %d, trigger: %s, extra: %s", GetFramerate(), GetLatency(), collectgarbage("count") * 1024, trigger, extra or "")
+end
+internal.LogPerformance = LogPerformance
+
 local function LogErrorMessage(errorString, errorCode)
     local message, stacktrace = errorString:match("(.+)\n(stack traceback:.+)")
     if(not message) then message = errorString end
@@ -157,6 +166,7 @@ if not success then
     debugInfo = ""
 end
 internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initializing..." .. debugInfo)
+LogPerformance("init")
 
 -- ingame logging hooks
 
@@ -258,7 +268,7 @@ end
 if internal.logPerformanceStats then
     local PERFORMANCE_LOG_INTERVAL = 10000
     EVENT_MANAGER:RegisterForUpdate(lib.id .. "PerformanceStats", PERFORMANCE_LOG_INTERVAL, function()
-        internal.Log(internal.LOG_LEVEL_DEBUG, LDL_LOGGER_CONFIG, "fps: %.2f, latency: %d, memory usage: %d", GetFramerate(), GetLatency(), collectgarbage("count") * 1024)
+        LogPerformance("interval")
     end)
 end
 
@@ -291,6 +301,7 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_ACTIVATED, function(event, i
     local prefix = initial and "approximate " or ""
     local level = regularLoadingScreen and internal.LOG_LEVEL_DEBUG or internal.LOG_LEVEL_INFO
     internal.Log(level, LDL_LOGGER_CONFIG, strformat("%s screen ended (%sduration: %.3fs)", name, prefix, duration / 1000))
+    LogPerformance("loadscreen", "end")
 
     regularLoadingScreen = true
 end)
@@ -298,6 +309,7 @@ end)
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_PLAYER_DEACTIVATED, function(event)
     internal.settings.loadScreenStartTime = internal.SESSION_START_TIME + GetGameTimeMilliseconds()
     internal.Log(internal.LOG_LEVEL_DEBUG, LDL_LOGGER_CONFIG, "Loading screen started")
+    LogPerformance("loadscreen", "start")
 end)
 
 -- initialization
@@ -326,4 +338,6 @@ EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_ADD_ON_LOADED, function(event, name
 
         internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initialization complete")
     end
+
+    LogPerformance("addon", name)
 end)

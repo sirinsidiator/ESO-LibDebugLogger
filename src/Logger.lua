@@ -18,6 +18,7 @@ end
 
 function Logger:Initialize(tag)
     assert(type(tag) == "string" and tag ~= "", "Invalid tag for logger")
+    internal.LogPerformance("logger", tag)
     self.enabled = true
     self.tag = tag
     self.originalTag = tag
