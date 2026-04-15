@@ -161,7 +161,7 @@ internal.Log(internal.LOG_LEVEL_INFO, LDL_LOGGER_CONFIG, "Initializing..." .. de
 -- ingame logging hooks
 
 EVENT_MANAGER:RegisterForEvent(lib.id, EVENT_LUA_ERROR, function(eventCode, errorString, errorCode)
-    if(errorString) then
+    if(errorString and errorCode ~= internal.TIME_SYNC_ERROR_CODE) then
         if internal.tlcStacktrace then
             local name = errorString:match("TopLevelControl (.*) cannot be parented to any control but GuiRoot.")
             if name and internal.tlcStacktrace[name] then

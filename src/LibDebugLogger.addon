@@ -29,3 +29,4 @@ API.lua
 Compatibility.lua
 
 Initialization.lua
+TimeSync.lua
